@@ -1,0 +1,25 @@
+{
+  "name": "sypher/keez",
+  "description": "A simple Keez.ro integration",
+  "type": "library",
+  "keywords": ["keez", "api", "accounting", "contabilitate"],
+  "license": "MIT",
+  "homepage": "https://sypher.eu/",
+  "authors": [
+    {
+      "name": "Cristian Badea",
+      "email": "black_lothar@yahoo.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "sypher\\keez\\": "src/"
+    }
+  },
+  "require": {
+    "php": ">=7.3.0",
+    "ext-curl": "*",
+    "ext-json": "*",
+    "ext-mbstring": "*"
+  }
+}
