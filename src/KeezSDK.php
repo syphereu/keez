@@ -7,28 +7,28 @@ use sypher\keez\entity\Invoice;
 
 class KeezSDK
 {
-    protected $access_token     = false;
+    protected $access_token = false;
     protected $access_token_exp = 0;
 
-    protected $client_id    = "";
-    protected $app_id       = "";
-    protected $secret       = "";
+    protected $client_id = "";
+    protected $app_id = "";
+    protected $secret = "";
 
     protected $api_client;
-    protected $devmode      = false;
+    protected $devmode = false;
 
-    protected $lastError    = "";
+    protected $lastError = "";
 
-    protected $apiHosts     = [
-        "dev"  => "staging.keez.ro",
+    protected $apiHosts = [
+        "dev" => "staging.keez.ro",
         "prod" => "app.keez.ro"
-        ];
+    ];
 
     public function __construct($credentials, $devmode = false)
     {
         $this->client_id = $credentials['client_id'];
-        $this->app_id    = $credentials['app_id'];
-        $this->secret    = $credentials['secret'];
+        $this->app_id = $credentials['app_id'];
+        $this->secret = $credentials['secret'];
 
         $this->setDevmode($devmode);
 
@@ -56,12 +56,12 @@ class KeezSDK
 
         $result = $this->api_client->callAPI("POST", $endPoint, $headers, $payload);
 
-        if (!$this->api_client->getError()) {
+        if (!$this->api_client->getError() && ($this->api_client->getExtendedInfo()['http_code'] == 200)) {
             $result = json_decode($result);
             $this->access_token = $result->access_token;
             $this->access_token_exp = $result->expires_in;
         } else {
-            throw new \Exception($this->getError());
+            throw new \Exception($this->api_client->getError() . "Service response code: " . $this->api_client->getExtendedInfo()['http_code'] );
         }
 
         return $this->access_token;
@@ -181,6 +181,26 @@ class KeezSDK
     }
 
     /**
+     * https://app.keez.ro/help/api/invoice_update.html
+     *
+     * @param Invoice $invoice
+     * @return false|Invoice
+     */
+    public function updateInvoice(Invoice $invoice)
+    {
+        $payload = json_encode($invoice);
+
+        $result = $this->call("/invoices/$invoice->externalId", "PUT", $payload);
+
+        if ($this->api_client->getExtendedInfo()['http_code'] < 300) {
+            return $this->getArticle($invoice->externalId);
+        } else {
+            $this->setLastError($result);
+            return false;
+        }
+    }
+
+    /**
      * https://app.keez.ro/help/api/invoice_list.html
      *
      * @param $externalId
@@ -195,6 +215,66 @@ class KeezSDK
             return HydrateObjects::hydrate(new Invoice($externalId), $result);
         } else {
             $this->setLastError(json_encode($result));
+            return false;
+        }
+    }
+
+    public function getInvoices($filter = "", $order = "", $count = "", $offset = "")
+    {
+        $operators = [
+            "="  => "eq",
+            "!=" => "neq",
+            "<"  => "lt",
+            ">"  => "gt",
+            ">=" => "gte",
+            "<=" => "lte",
+            "%%" => "like",
+            "%"  => "sw"
+        ];
+
+        $buildFilter = "";
+
+        if (is_array($filter) && in_array(count($filter), [2, 3])) {
+            $i = 0;
+            foreach($filter as $param) {
+                if (count($param) == 2) {
+                    $operator = "=";
+                    $value = $param[1];
+                } else {
+                    $operator = $param[1];
+                    $value = $param[2];
+                }
+
+                $buildFilter .= $param[0] . "[" . $operators[$operator] . "]:" . $value;
+
+                $i++;
+                if ($i < count($filter)) {
+                    $buildFilter .= " AND ";
+                }
+            }
+        } else {
+            $buildFilter = $filter;
+        }
+
+        $buildFilter = urlencode($buildFilter);
+        $result = $this->call("/invoices?filter=$buildFilter&order=$order&count=$count&offset=$offset", "GET");
+
+        if ($this->api_client->getExtendedInfo()['http_code'] != 200) {
+            $this->setLastError(json_encode($result));
+            return false;
+        }
+
+        $retval = [];
+
+        if ($result) {
+            $json = json_decode($result, true);
+            $data = $json["data"];
+            foreach($data as $_invoice) {
+                $retval[] = HydrateObjects::hydrate(new Invoice($_invoice["externalId"]), $_invoice);
+            }
+
+            return $retval;
+        } else {
             return false;
         }
     }
@@ -255,6 +335,28 @@ class KeezSDK
 
         if ($this->api_client->getExtendedInfo()['http_code'] < 300) {
             return $result;
+        } else {
+            $this->setLastError($result);
+            return false;
+        }
+    }
+
+    /**
+     * https://app.keez.ro/help/api/invoice_submit_efactura.html
+     *
+     * @param $externalId
+     * @return bool
+     */
+    public function eFacturaInvoice($externalId): bool
+    {
+        $payload = json_encode(
+            ["externalId" => $externalId]
+        );
+
+        $result = $this->call("/invoices/efactura/submitted", "POST", $payload);
+
+        if ($this->api_client->getExtendedInfo()['http_code'] < 300) {
+            return true;
         } else {
             $this->setLastError($result);
             return false;

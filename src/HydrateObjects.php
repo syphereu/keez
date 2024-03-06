@@ -4,6 +4,7 @@ namespace Sypher\Keez;
 
 use sypher\keez\entity\Article;
 use sypher\keez\entity\Invoice;
+use sypher\keez\entity\InvoiceLineItem;
 use sypher\keez\entity\Partner;
 
 class HydrateObjects
@@ -18,6 +19,8 @@ class HydrateObjects
             case Invoice::class:
                 return self::hydrateInvoice($newObject, $object);
         }
+
+        return false;
     }
 
     public static function hydrateArticle(Article $newObject, $object): Article
@@ -28,7 +31,18 @@ class HydrateObjects
     public static function hydrateInvoice(Invoice $newObject, $object): Invoice
     {
         $newObject = self::fillObject($newObject, $object);
-        $newObject->partner = self::fillObject(new Partner(), $object["partner"]);
+
+        if(isset($object["partner"])) {
+            $newObject->partner = self::fillObject(new Partner(), $object["partner"]);
+        }
+
+        if (isset($object["invoiceDetails"])) {
+            $invoiceDetails = [];
+            foreach($object["invoiceDetails"] as $line) {
+                $invoiceDetails[] = self::fillObject(new InvoiceLineItem(), $line);
+            }
+            $newObject->invoiceDetails = $invoiceDetails;
+        }
 
         return $newObject;
     }

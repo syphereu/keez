@@ -1,6 +1,6 @@
 # A simple keez.ro library
 
-[![MIT Licensed](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
+[![MIT Licensed](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE)
 
 The Keez PHP library provides convenient access to the Keez.ro API from
 applications written in the PHP language. It includes a pre-defined set of
@@ -77,9 +77,12 @@ $error = $keez->getLastError();
 
 #### Invoices
 - [createInvoice($Invoice)](#createInvoice)
+- [updateInvoice($Invoice)](#updateInvoice) 
 - [getInvoice($invoiceId)](#getInvoice)
+- [getInvoices($filter, $order, $count, $offset)](#getInvoices)
 - [deleteInvoice($invoiceId)](#deleteInvoice)
 - [validateInvoice($invoiceId)](#validateInvoice)
+- [eFacturaInvoice($invoiceId)](#eFacturaInvoice)
 
 ---
 
@@ -141,30 +144,74 @@ same type `Invoice` on success, or false on failure. The returned entity will co
 including properties which were not set on the input article, plus the `externalId`.
 
 ```php
-$this->keez->createInvoice();
+$savedInvoice = $this->keez->createInvoice($invoice);
 ```
 
-- <a name="getInvoice">getInvoice($invoiceId)</a> - Receives the externalId of an `Invoice` and returns an entity of
+- <a name="updateInvoice">updateInvoice(`$invoice`)</a> - Receives an entity of type `Invoice` as input and returns an entity of the
+  same type `Invoice` on success, or false on failure. The returned entity will contain all full properties of the object,
+  including properties which were not set on the input article.
+
+```php
+$updatedInvoice = $this->keez->updateInvoice($invoice);
+```
+
+- <a name="getInvoice">getInvoice(`$invoiceId`)</a> - Receives the externalId of an `Invoice` and returns an entity of
 type `Invoice`, or false on failure.
 
 ```php
 $invoice = $keez->getInvoice("3f066d8a330a4313ad02bdfd537d2c79");
 ```
 
-- <a name="deleteInvoice">deleteInvoice($invoiceId)</a> - Receives the externalId of an `Invoice` and returns true on 
+
+- <a name="getInvoices">getInvoices(`$filter`, `$order`, `$count`, `$offset`)</a> - Performs a search for invoices with
+specific filters, in the given order. Returns an array of `Invoice` objects, or false on failure. 
+All parameters are optional.
+
+`filter` can be either an array with the conditions or a string with the exact syntax supported by Keez API.
+
+If sending the filter as an array, the array values can be arrays with two or three items. Two items assumes the
+operation is equal.
+
+ - ['searchForVariable', 'operation', 'searchForValue']
+ - ['searchForVariable', 'searchForValue']
+
+Supported operations are all comparisons like =, !=, <=, >=, <, > and special operations like %% (equivalent of SQL
+LIKE) and % (string starts with).
+
+Example:
+
+```php
+// using array
+$filter = [["series", "=", "SERIE"], ["number", 106]];
+// using string
+$filter = "series[eq]:SERIE AND number[eq]:106";
+// both versions have the same effect
+
+$invoice = $keez->getInvoices();
+```
+
+
+- <a name="deleteInvoice">deleteInvoice(`$invoiceId`)</a> - Receives the externalId of an `Invoice` and returns true on 
 success or false on failure.
 
 ```php
 $keez->deleteInvoice("3f066d8a330a4313ad02bdfd537d2c79");
 ```
 
-- <a name="validateInvoice">validateInvoice($invoiceId)</a> - Receives the externalId of an `Invoice` and returns true
+- <a name="validateInvoice">validateInvoice(`$invoiceId`)</a> - Receives the externalId of an `Invoice` and returns true
 on success or false on failure.
 
 ```php
 $keez->validateInvoice("3f066d8a330a4313ad02bdfd537d2c79");
 ```
 
+- <a name="eFacturaInvoice">eFacturaInvoice(`$invoiceId`)</a> - Receives the externalId of an `Invoice` and returns true
+  on success or false on failure.
+
+```php
+$keez->eFacturaInvoice("3f066d8a330a4313ad02bdfd537d2c79");
+```
+
 ## License
 
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+The MIT License (MIT). Please see [License File](LICENSE) for more information.
