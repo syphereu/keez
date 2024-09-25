@@ -67,26 +67,28 @@ normally is a JSON.
 $error = $keez->getLastError();
 ```
 
-## Implemented functions:
+## Functions index
 
 #### Articles
-- [createArticle($Article)](#createArticle)
-- [getArticle($articleId)](#getArticle)
-- [updateArticle($Article)](#updateArticle)
-- [getArticles()](#getArticles)
+- [createArticle($Article)](#createarticle)
+- [getArticle($articleId)](#getarticle)
+- [updateArticle($Article)](#updatearticle)
+- [getArticles($filter, $order, $count, $offset)](#getarticles)
 
 #### Invoices
-- [createInvoice($Invoice)](#createInvoice)
-- [updateInvoice($Invoice)](#updateInvoice) 
-- [getInvoice($invoiceId)](#getInvoice)
-- [getInvoices($filter, $order, $count, $offset)](#getInvoices)
-- [deleteInvoice($invoiceId)](#deleteInvoice)
-- [validateInvoice($invoiceId)](#validateInvoice)
-- [eFacturaInvoice($invoiceId)](#eFacturaInvoice)
+- [createInvoice($Invoice)](#createinvoice)
+- [updateInvoice($Invoice)](#updateinvoice) 
+- [getInvoice($invoiceId)](#getinvoice)
+- [getInvoices($filter, $order, $count, $offset)](#getinvoices)
+- [deleteInvoice($invoiceId)](#deleteinvoice)
+- [validateInvoice($invoiceId)](#validateinvoice)
+- [eFacturaInvoice($invoiceId)](#efacturainvoice)
 
 ---
+## Functions 
+### createArticle
 
-- <a name="createArticle">createArticle</a> - Receives an entity of type `Article` as input and returns an entity of the
+- createArticle - Receives an entity of type `Article` as input and returns an entity of the
 same type `Article` on success, or false on failure. The returned entity will contain all full properties of the object,
 including properties which were not set on the input article, plus the 
 `externalId`.
@@ -105,14 +107,18 @@ $article->isActive = true;
 $this->keez->createArticle($article);
 ```
 
-- <a name="getArticle">getArticle</a> - Receives the externalId of an `Article` and returns an entity of type `Article`
+### getArticle
+
+- getArticle - Receives the externalId of an `Article` and returns an entity of type `Article`
 on success or false on failure.
 
 ```php
 $article = $keez->getArticle("articleId");
 ```
 
-- <a name="updateArticle">updateArticle</a> - Receives as input an entity of type `Article` with full or partial 
+### updateArticle
+
+- updateArticle - Receives as input an entity of type `Article` with full or partial 
 properties and returns an entity of the type `Article` on success, with all full properties of the object, or false on
 failure. If partial properties are sent, only those properties will be updated. In all cases, externalId must be
 included in the input object.
@@ -132,14 +138,19 @@ $article->name = "Sample Product Xtra Large";
 $article = $keez->updateArticle($article);
 ```
 
-- <a name="getArticles">getArticles</a> - returns an array of entities of type `Article` on success, or `false` on
-failure.
+### getArticles
+
+- getArticles(`$filter`, `$order`, `$count`, `$offset`) - Performs a search for Articles with 
+specific filters, in the given `order`. Returns an array of `Article` objects, or `false` on failure.
+All parameters are optional. See [Working with filters](#working-with-filters) for an overview of how to pass filters.
 
 ```php
 $keezProducts = $keez->getArticles();
 ```
 
-- <a name="createInvoice">createInvoice</a> - Receives an entity of type `Invoice` as input and returns an entity of the
+### createInvoice
+
+- createInvoice - Receives an entity of type `Invoice` as input and returns an entity of the
 same type `Invoice` on success, or false on failure. The returned entity will contain all full properties of the object,
 including properties which were not set on the input article, plus the `externalId`.
 
@@ -147,7 +158,9 @@ including properties which were not set on the input article, plus the `external
 $savedInvoice = $this->keez->createInvoice($invoice);
 ```
 
-- <a name="updateInvoice">updateInvoice(`$invoice`)</a> - Receives an entity of type `Invoice` as input and returns an entity of the
+### updateInvoice
+
+- updateInvoice(`$invoice`) - Receives an entity of type `Invoice` as input and returns an entity of the
   same type `Invoice` on success, or false on failure. The returned entity will contain all full properties of the object,
   including properties which were not set on the input article.
 
@@ -155,25 +168,56 @@ $savedInvoice = $this->keez->createInvoice($invoice);
 $updatedInvoice = $this->keez->updateInvoice($invoice);
 ```
 
-- <a name="getInvoice">getInvoice(`$invoiceId`)</a> - Receives the externalId of an `Invoice` and returns an entity of
+### getInvoice
+
+- getInvoice(`$invoiceId`) - Receives the externalId of an `Invoice` and returns an entity of
 type `Invoice`, or false on failure.
 
 ```php
 $invoice = $keez->getInvoice("3f066d8a330a4313ad02bdfd537d2c79");
 ```
 
+### getInvoices
 
-- <a name="getInvoices">getInvoices(`$filter`, `$order`, `$count`, `$offset`)</a> - Performs a search for invoices with
+- getInvoices(`$filter`, `$order`, `$count`, `$offset`) - Performs a search for invoices with
 specific filters, in the given order. Returns an array of `Invoice` objects, or false on failure. 
-All parameters are optional.
+All parameters are optional. See [Working with filters](#working-with-filters) for an overview of how to pass filters.
+
+### deleteInvoice
+
+- deleteInvoice(`$invoiceId`) - Receives the externalId of an `Invoice` and returns true on 
+success or false on failure.
+
+```php
+$keez->deleteInvoice("3f066d8a330a4313ad02bdfd537d2c79");
+```
+
+### validateInvoice
+
+- validateInvoice(`$invoiceId`) - Receives the externalId of an `Invoice` and returns true
+on success or false on failure.
+
+```php
+$keez->validateInvoice("3f066d8a330a4313ad02bdfd537d2c79");
+```
+
+### eFacturaInvoice
+- eFacturaInvoice(`$invoiceId`) - Receives the externalId of an `Invoice` and returns true
+  on success or false on failure.
+
+```php
+$keez->eFacturaInvoice("3f066d8a330a4313ad02bdfd537d2c79");
+```
+
+## Working with filters
 
 `filter` can be either an array with the conditions or a string with the exact syntax supported by Keez API.
 
 If sending the filter as an array, the array values can be arrays with two or three items. Two items assumes the
 operation is equal.
 
- - ['searchForVariable', 'operation', 'searchForValue']
- - ['searchForVariable', 'searchForValue']
+- ['searchForVariable', 'operation', 'searchForValue']
+- ['searchForVariable', 'searchForValue']
 
 Supported operations are all comparisons like =, !=, <=, >=, <, > and special operations like %% (equivalent of SQL
 LIKE) and % (string starts with).
@@ -181,36 +225,19 @@ LIKE) and % (string starts with).
 Example:
 
 ```php
-// using array
+// searching for an Invoice with a specific serie and number, using array
 $filter = [["series", "=", "SERIE"], ["number", 106]];
-// using string
+// searching for an Invoice with a specific serie and number, using string
 $filter = "series[eq]:SERIE AND number[eq]:106";
 // both versions have the same effect
 
-$invoice = $keez->getInvoices();
+$invoice = $keez->getInvoices($filter);
+
+// searching for a specific Article by code
+$filter = [["code", 'MY_SKU']];
+$articles = $keez->getArticles($filter);
 ```
 
-
-- <a name="deleteInvoice">deleteInvoice(`$invoiceId`)</a> - Receives the externalId of an `Invoice` and returns true on 
-success or false on failure.
-
-```php
-$keez->deleteInvoice("3f066d8a330a4313ad02bdfd537d2c79");
-```
-
-- <a name="validateInvoice">validateInvoice(`$invoiceId`)</a> - Receives the externalId of an `Invoice` and returns true
-on success or false on failure.
-
-```php
-$keez->validateInvoice("3f066d8a330a4313ad02bdfd537d2c79");
-```
-
-- <a name="eFacturaInvoice">eFacturaInvoice(`$invoiceId`)</a> - Receives the externalId of an `Invoice` and returns true
-  on success or false on failure.
-
-```php
-$keez->eFacturaInvoice("3f066d8a330a4313ad02bdfd537d2c79");
-```
 
 ## License
 

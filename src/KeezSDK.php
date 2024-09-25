@@ -61,7 +61,11 @@ class KeezSDK
             $this->access_token = $result->access_token;
             $this->access_token_exp = $result->expires_in;
         } else {
-            throw new \Exception($this->api_client->getError() . "Service response code: " . $this->api_client->getExtendedInfo()['http_code'] );
+            throw new \Exception(
+                $this->api_client->getError() .
+                "Service response code: " . $this->api_client->getExtendedInfo()['http_code'] . PHP_EOL .
+                "Response: " . $result
+            );
         }
 
         return $this->access_token;
@@ -72,13 +76,15 @@ class KeezSDK
      *
      * @return array|false
      */
-    public function getArticles()
+    public function getArticles($filter = "", $order = 'name', $count = "", $offset = 0)
     {
         if (!$this->access_token) {
             $this->generateToken();
         }
 
-        $endPoint = $this->getAPIUrl() . "/" . $this->client_id . "/items";
+        $filter = $this->serializeFilter($filter);
+
+        $endPoint = $this->getAPIUrl() . "/" . $this->client_id . "/items?filter=$filter&order=$order&count=$count&offset=$offset";
 
         $headers = [
             'Content-Type: application/json',
@@ -86,6 +92,7 @@ class KeezSDK
         ];
 
         $result = $this->api_client->callAPI("GET", $endPoint, $headers);
+
         if ($this->api_client->getExtendedInfo()['http_code'] == 200) {
             $retval = [];
             $results = json_decode($result, true);
@@ -221,42 +228,8 @@ class KeezSDK
 
     public function getInvoices($filter = "", $order = "", $count = "", $offset = "")
     {
-        $operators = [
-            "="  => "eq",
-            "!=" => "neq",
-            "<"  => "lt",
-            ">"  => "gt",
-            ">=" => "gte",
-            "<=" => "lte",
-            "%%" => "like",
-            "%"  => "sw"
-        ];
+        $buildFilter = $this->serializeFilter($filter);
 
-        $buildFilter = "";
-
-        if (is_array($filter) && in_array(count($filter), [2, 3])) {
-            $i = 0;
-            foreach($filter as $param) {
-                if (count($param) == 2) {
-                    $operator = "=";
-                    $value = $param[1];
-                } else {
-                    $operator = $param[1];
-                    $value = $param[2];
-                }
-
-                $buildFilter .= $param[0] . "[" . $operators[$operator] . "]:" . $value;
-
-                $i++;
-                if ($i < count($filter)) {
-                    $buildFilter .= " AND ";
-                }
-            }
-        } else {
-            $buildFilter = $filter;
-        }
-
-        $buildFilter = urlencode($buildFilter);
         $result = $this->call("/invoices?filter=$buildFilter&order=$order&count=$count&offset=$offset", "GET");
 
         if ($this->api_client->getExtendedInfo()['http_code'] != 200) {
@@ -376,6 +349,52 @@ class KeezSDK
         ];
 
         return $this->api_client->callAPI($method, $endPoint, $headers, $payload);
+    }
+
+    /**
+     * @param $filter
+     * @return string
+     */
+    private function serializeFilter($filter = [])
+    {
+        $operators = [
+            "="  => "eq",
+            "!=" => "neq",
+            "<"  => "lt",
+            ">"  => "gt",
+            ">=" => "gte",
+            "<=" => "lte",
+            "%%" => "like",
+            "%"  => "sw"
+        ];
+
+        $buildFilter = "";
+
+        if (is_array($filter)) {
+            $i = 0;
+            foreach($filter as $param) {
+                if (count($param) == 2) {
+                    $operator = "=";
+                    $value = $param[1];
+                } else {
+                    $operator = $param[1];
+                    $value = $param[2];
+                }
+
+                $buildFilter .= $param[0] . "[" . $operators[$operator] . "]:" . $value;
+
+                $i++;
+                if ($i < count($filter)) {
+                    $buildFilter .= " AND ";
+                }
+            }
+        } else {
+            $buildFilter = $filter;
+        }
+
+        $buildFilter = urlencode($buildFilter);
+
+        return $buildFilter;
     }
 
     /**

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0 - 2024-09-25
+
+- added support for filtering, ordering, and pagination for getArticles function
+
 ## 0.2.0 - 2024-03-06
 
 - added updateInvoice function
