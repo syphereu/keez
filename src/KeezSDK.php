@@ -62,7 +62,7 @@ class KeezSDK
             $this->access_token_exp = $result->expires_in;
         } else {
             throw new \Exception(
-                $this->api_client->getError() .
+                ($this->api_client->getError() ? $this->api_client->getError() . PHP_EOL : "") .
                 "Service response code: " . $this->api_client->getExtendedInfo()['http_code'] . PHP_EOL .
                 "Response: " . $result
             );
@@ -101,7 +101,7 @@ class KeezSDK
             }
             return $retval;
         } else {
-            $this->setLastError($result);
+            $this->setCallError($result);
             return false;
         }
     }
@@ -120,7 +120,7 @@ class KeezSDK
             $result = json_decode($result, true);
             return HydrateObjects::hydrate(new Article($externalId), $result);
         } else {
-            $this->setLastError(json_encode($result));
+            $this->setCallError(json_encode($result));
             return false;
         }
     }
@@ -137,11 +137,11 @@ class KeezSDK
 
         $result = $this->call("/items", "POST", $payload);
 
-        if ($this->api_client->getExtendedInfo()['http_code'] < 300) {
+        if ($this->callSucceeded()) {
             $result = json_decode($result);
             return $this->getArticle($result->externalId);
         } else {
-            $this->setLastError($result);
+            $this->setCallError($result);
             return false;
         }
     }
@@ -158,10 +158,10 @@ class KeezSDK
 
         $result = $this->call("/items/$article->externalId", "PATCH", $payload);
 
-        if ($this->api_client->getExtendedInfo()['http_code'] < 300) {
+        if ($this->callSucceeded()) {
             return $this->getArticle($article->externalId);
         } else {
-            $this->setLastError($result);
+            $this->setCallError($result);
             return false;
         }
     }
@@ -178,11 +178,11 @@ class KeezSDK
 
         $result = $this->call("/invoices", "POST", $payload);
 
-        if ($this->api_client->getExtendedInfo()['http_code'] < 300) {
+        if ($this->callSucceeded()) {
             $result = json_decode($result);
             return $this->getInvoice($result->externalId);
         } else {
-            $this->setLastError($result);
+            $this->setCallError($result);
             return false;
         }
     }
@@ -199,10 +199,10 @@ class KeezSDK
 
         $result = $this->call("/invoices/$invoice->externalId", "PUT", $payload);
 
-        if ($this->api_client->getExtendedInfo()['http_code'] < 300) {
+        if ($this->callSucceeded()) {
             return $this->getArticle($invoice->externalId);
         } else {
-            $this->setLastError($result);
+            $this->setCallError($result);
             return false;
         }
     }
@@ -221,7 +221,7 @@ class KeezSDK
             $result = json_decode($result, true);
             return HydrateObjects::hydrate(new Invoice($externalId), $result);
         } else {
-            $this->setLastError(json_encode($result));
+            $this->setCallError(json_encode($result));
             return false;
         }
     }
@@ -233,7 +233,7 @@ class KeezSDK
         $result = $this->call("/invoices?filter=$buildFilter&order=$order&count=$count&offset=$offset", "GET");
 
         if ($this->api_client->getExtendedInfo()['http_code'] != 200) {
-            $this->setLastError(json_encode($result));
+            $this->setCallError(json_encode($result));
             return false;
         }
 
@@ -266,10 +266,10 @@ class KeezSDK
 
         $result = $this->call("/invoices", "DELETE", $payload);
 
-        if ($this->api_client->getExtendedInfo()['http_code'] < 300) {
+        if ($this->callSucceeded()) {
             return true;
         } else {
-            $this->setLastError($result);
+            $this->setCallError($result);
             return false;
         }
     }
@@ -288,10 +288,10 @@ class KeezSDK
 
         $result = $this->call("/invoices/valid", "POST", $payload);
 
-        if ($this->api_client->getExtendedInfo()['http_code'] < 300) {
+        if ($this->callSucceeded()) {
             return true;
         } else {
-            $this->setLastError($result);
+            $this->setCallError($result);
             return false;
         }
     }
@@ -306,10 +306,10 @@ class KeezSDK
     {
         $result = $this->call("/invoices/$externalId/pdf", "GET");
 
-        if ($this->api_client->getExtendedInfo()['http_code'] < 300) {
+        if ($this->callSucceeded()) {
             return $result;
         } else {
-            $this->setLastError($result);
+            $this->setCallError($result);
             return false;
         }
     }
@@ -328,10 +328,10 @@ class KeezSDK
 
         $result = $this->call("/invoices/efactura/submitted", "POST", $payload);
 
-        if ($this->api_client->getExtendedInfo()['http_code'] < 300) {
+        if ($this->callSucceeded()) {
             return true;
         } else {
-            $this->setLastError($result);
+            $this->setCallError($result);
             return false;
         }
     }
@@ -349,6 +349,35 @@ class KeezSDK
         ];
 
         return $this->api_client->callAPI($method, $endPoint, $headers, $payload);
+    }
+
+    /**
+     * True when the last call completed with a 2xx response. A call that could not reach Keez
+     * (connection error, timeout) has http_code 0 and is not a success.
+     *
+     * @return bool
+     */
+    private function callSucceeded(): bool
+    {
+        $httpCode = $this->api_client->getExtendedInfo()['http_code'];
+
+        return !$this->api_client->getError() && ($httpCode >= 200) && ($httpCode < 300);
+    }
+
+    /**
+     * Stores the error of a failed call: the connection error when the request did not complete
+     * (the response is false in that case), otherwise the given response.
+     *
+     * @param mixed $response
+     * @return KeezSDK
+     */
+    private function setCallError($response): KeezSDK
+    {
+        if ($this->api_client->getError()) {
+            return $this->setLastError($this->api_client->getError());
+        }
+
+        return $this->setLastError((string)$response);
     }
 
     /**
@@ -412,6 +441,19 @@ class KeezSDK
     public function setDevmode(bool $devmode): keezSDK
     {
         $this->devmode = $devmode;
+        return $this;
+    }
+
+    /**
+     * curl timeouts applied to every Keez call. Defaults: 5s connect, 30s total.
+     *
+     * @param int $connectTimeout seconds to wait for the connection, 0 = no limit
+     * @param int $timeout seconds for the whole request, 0 = no limit
+     * @return KeezSDK
+     */
+    public function setTimeouts(int $connectTimeout, int $timeout): KeezSDK
+    {
+        $this->api_client->setTimeouts($connectTimeout, $timeout);
         return $this;
     }
 

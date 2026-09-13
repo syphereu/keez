@@ -13,6 +13,12 @@ class APIClient
     protected $error;
     protected $extended_info;
 
+    /**
+     * curl timeouts in seconds, 0 = no limit
+     */
+    protected $connectTimeout = 5;
+    protected $timeout = 30;
+
     public function callAPI($method, $url, $headers = false, $data = false)
     {
         $curl = curl_init();
@@ -64,6 +70,8 @@ class APIClient
 
         curl_setopt($curl, CURLOPT_URL, $url);
         curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($curl, CURLOPT_CONNECTTIMEOUT, $this->connectTimeout);
+        curl_setopt($curl, CURLOPT_TIMEOUT, $this->timeout);
 
         $result = curl_exec($curl);
 
@@ -75,6 +83,18 @@ class APIClient
         curl_close($curl);
 
         return $result;
+    }
+
+    /**
+     * @param int $connectTimeout seconds to wait for the connection, 0 = no limit
+     * @param int $timeout seconds for the whole request, 0 = no limit
+     * @return APIClient
+     */
+    public function setTimeouts(int $connectTimeout, int $timeout)
+    {
+        $this->connectTimeout = $connectTimeout;
+        $this->timeout = $timeout;
+        return $this;
     }
 
     private function setError($error)

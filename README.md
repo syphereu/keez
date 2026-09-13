@@ -67,6 +67,26 @@ normally is a JSON.
 $error = $keez->getLastError();
 ```
 
+## Timeouts
+
+Every call to Keez uses a connect timeout of 5 seconds and a total timeout of 30 seconds, so an unreachable or
+slow Keez server cannot block your application indefinitely.
+
+To change them, use function setTimeouts(`$connectTimeout`, `$timeout`), with both values in seconds:
+
+- `$connectTimeout` - maximum time to wait for the connection to be established
+- `$timeout` - maximum time for the whole request, including the response transfer
+
+Use `0` for no limit. The function returns the `KeezSDK` instance, so it can be chained after the constructor.
+
+```php
+$keez = (new KeezSDK($credentials, $devmode))->setTimeouts(10, 60);
+```
+
+The new values apply to all subsequent calls, including the token request. When a call exceeds a timeout it fails like
+any other connection error: the function returns false and getLastError returns the connection error (e.g.
+`Connection timed out after 5001 milliseconds`). For the token request, the same error is in the exception message.
+
 ## Functions index
 
 #### Articles

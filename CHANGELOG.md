@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1 - 2026-09-13
+
+- added curl timeouts for all API calls, defaulting to 5 seconds connect and 30 seconds total (previously no limit)
+- added setTimeouts function to KeezSDK and APIClient to override the timeouts (0 = no limit)
+- generateToken error message puts the connection error on its own line instead of joining it to the response code
+- fixed getLastError returning an empty string (or "false") when a call could not reach Keez; it now returns the connection error
+- fixed createArticle, updateArticle, createInvoice, updateInvoice, deleteInvoice, validateInvoice, eFacturaInvoice and downloadInvoice treating a call that could not reach Keez as successful; only 2xx responses are successful now
+
 ## 0.3.0 - 2024-09-25
 
 - added support for filtering, ordering, and pagination for getArticles function
